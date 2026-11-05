@@ -17,6 +17,8 @@ public class OrderBillingEngine {
 
     private final Map<String, PaymentStrategy> paymentStrategies
             = new java.util.HashMap<>();
+    private final Map<String, NotificationService> notificationServices
+        = new java.util.HashMap<>();
 
     // Default constructor
     public OrderBillingEngine() {
@@ -26,18 +28,25 @@ public class OrderBillingEngine {
     // Constructor injection
     public OrderBillingEngine(OrderRepository orderRepository) {
 
-        this.orderRepository = orderRepository;
+    this.orderRepository = orderRepository;
 
-        paymentStrategies.put(
-                "CREDIT_CARD", new CreditCardPayment());
+    // Register Payment Strategies
+    paymentStrategies.put(
+            "CREDIT_CARD", new CreditCardPayment());
 
-        paymentStrategies.put(
-                "EASYPAISA", new EasyPaisaPayment());
+    paymentStrategies.put(
+            "EASYPAISA", new EasyPaisaPayment());
 
-        paymentStrategies.put(
-                "CASH_ON_DELIVERY", new CashOnDeliveryPayment());
-    }
+    paymentStrategies.put(
+            "CASH_ON_DELIVERY", new CashOnDeliveryPayment());
 
+    // Register Notification Services
+    notificationServices.put(
+            "EMAIL", new EmailNotificationService());
+
+    notificationServices.put(
+            "SMS", new SMSNotificationService());
+}
     public boolean processOrder(Map<String, Object> orderData) {
 
         // 1. Input Validation
@@ -127,38 +136,42 @@ public class OrderBillingEngine {
                 paymentStatus
         );
 
-        // 6. Notification Dispatch
-        String notifyChannel = (String)
-                orderData.getOrDefault("notifyChannel", "EMAIL");
 
-        if (notifyChannel.equals("EMAIL")) {
+// 6. Notification Dispatch
+String notifyChannel = (String)
+        orderData.getOrDefault("notifyChannel", "EMAIL");
 
-            NotificationService notificationService
-                    = new EmailNotificationService();
+NotificationService notificationService =
+        notificationServices.get(notifyChannel);
 
-            String notificationMessage = "Your order of PKR "
-                    + String.format("%.2f", payableAmount)
-                    + " is confirmed!";
+if (notificationService != null) {
 
-            notificationService.sendNotification(
-                    email, notificationMessage);
+    String recipient;
+    String notificationMessage;
 
-        } else if (notifyChannel.equals("SMS")) {
+    if (notifyChannel.equals("EMAIL")) {
 
-            NotificationService notificationService
-                    = new SMSNotificationService();
+        recipient = email;
 
-            String phone = (String)
-                    orderData.getOrDefault("phone", "0300-0000000");
+        notificationMessage = "Your order of PKR "
+                + String.format("%.2f", payableAmount)
+                + " is confirmed!";
 
-            String notificationMessage = "Order confirmed! Paid: PKR "
-                    + String.format("%.2f", payableAmount);
+    } else {
 
-            notificationService.sendNotification(
-                    phone, notificationMessage);
-        }
+        recipient = (String)
+                orderData.getOrDefault("phone", "0300-0000000");
 
-        return true;
+        notificationMessage = "Order confirmed! Paid: PKR "
+                + String.format("%.2f", payableAmount);
+    }
+
+    notificationService.sendNotification(
+            recipient, notificationMessage);
+}
+
+return true;
+
     }
 
     // Getter and Setter for testing file path redirection
