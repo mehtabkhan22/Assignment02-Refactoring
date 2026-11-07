@@ -32,4 +32,30 @@ class NotificationMessageProviderTest {
                 message
         );
     }
+    @Test
+void testNullNotificationMessageProvider() {
+
+    OrderBillingEngine engine = new OrderBillingEngine();
+
+    assertThrows(
+            IllegalArgumentException.class,
+            () -> engine.registerNotificationMessageProvider(
+                    "EMAIL", null)
+    );
+}
+
+@Test
+void testEmptyNotificationChannel() {
+
+    OrderBillingEngine engine = new OrderBillingEngine();
+
+    NotificationMessageProvider provider =
+            new GeneralNotificationMessageProvider();
+
+    assertThrows(
+            IllegalArgumentException.class,
+            () -> engine.registerNotificationMessageProvider(
+                    "", provider)
+    );
+}
 }
