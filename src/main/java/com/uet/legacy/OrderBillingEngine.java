@@ -47,6 +47,8 @@ public class OrderBillingEngine {
 
         registerNotificationService(
                 "SMS", new SMSNotificationService());
+        registerNotificationService(
+        "WHATSAPP", new WhatsAppNotificationService());
     }
 
     // Register a new payment strategy

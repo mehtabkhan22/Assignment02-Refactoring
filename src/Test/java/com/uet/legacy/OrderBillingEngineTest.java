@@ -9,6 +9,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 
 class OrderBillingEngineTest {
 
@@ -262,6 +264,34 @@ void testSmsNotification() {
     order.put("phone", "03001234567");
 
     assertTrue(engine.processOrder(order));
+}
+@Test
+void testWhatsAppNotification() {
+
+    Map<String, Object> order =
+            createOrder("REGULAR", 1000.0, 1);
+
+    order.put("notifyChannel", "WHATSAPP");
+    order.put("phone", "03001234567");
+
+    ByteArrayOutputStream output =
+            new ByteArrayOutputStream();
+
+    PrintStream originalOut = System.out;
+
+    try {
+        System.setOut(new PrintStream(output));
+
+        assertTrue(engine.processOrder(order));
+
+    } finally {
+        System.setOut(originalOut);
+    }
+
+    String result = output.toString();
+
+    assertTrue(result.contains("[WHATSAPP DISPATCHED]"));
+    assertTrue(result.contains("03001234567"));
 }
 @Test
 void testDefaultCashPaymentMethod() {
