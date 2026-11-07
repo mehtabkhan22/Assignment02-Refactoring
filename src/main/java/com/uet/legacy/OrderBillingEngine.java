@@ -42,10 +42,10 @@ public class OrderBillingEngine {
                 "CASH_ON_DELIVERY", new CashOnDeliveryPayment());
 
         // Register Notification Services
-        notificationServices.put(
+        registerNotificationService(
                 "EMAIL", new EmailNotificationService());
 
-        notificationServices.put(
+        registerNotificationService(
                 "SMS", new SMSNotificationService());
     }
 
@@ -65,6 +65,24 @@ public class OrderBillingEngine {
         }
 
         paymentStrategies.put(paymentMethod, strategy);
+    }
+
+    // Register a new notification service
+    public void registerNotificationService(
+            String channel,
+            NotificationService service) {
+
+        if (channel == null || channel.isBlank()) {
+            throw new IllegalArgumentException(
+                    "Notification channel cannot be empty!");
+        }
+
+        if (service == null) {
+            throw new IllegalArgumentException(
+                    "Notification service cannot be null!");
+        }
+
+        notificationServices.put(channel, service);
     }
 
     public boolean processOrder(Map<String, Object> orderData) {
