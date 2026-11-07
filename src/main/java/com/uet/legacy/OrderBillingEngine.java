@@ -21,6 +21,9 @@ public class OrderBillingEngine {
     private final Map<String, NotificationService> notificationServices
             = new java.util.HashMap<>();
 
+    private final Map<String, NotificationMessageProvider> messageProviders
+            = new java.util.HashMap<>();
+
     private final Map<String, NotificationRecipientProvider>
             recipientProviders = new java.util.HashMap<>();
 
@@ -63,6 +66,16 @@ public class OrderBillingEngine {
 
         registerNotificationRecipientProvider(
                 "WHATSAPP", new PhoneRecipientProvider());
+
+        // Register Notification Message Providers
+        registerNotificationMessageProvider(
+                "EMAIL", new EmailNotificationMessageProvider());
+
+        registerNotificationMessageProvider(
+                "SMS", new GeneralNotificationMessageProvider());
+
+        registerNotificationMessageProvider(
+                "WHATSAPP", new GeneralNotificationMessageProvider());
     }
 
     // Register a new payment strategy
@@ -117,6 +130,24 @@ public class OrderBillingEngine {
         }
 
         recipientProviders.put(channel, provider);
+    }
+
+    // Register a notification message provider
+    public void registerNotificationMessageProvider(
+            String channel,
+            NotificationMessageProvider provider) {
+
+        if (channel == null || channel.isBlank()) {
+            throw new IllegalArgumentException(
+                    "Notification channel cannot be empty!");
+        }
+
+        if (provider == null) {
+            throw new IllegalArgumentException(
+                    "Message provider cannot be null!");
+        }
+
+        messageProviders.put(channel, provider);
     }
 
     public boolean processOrder(Map<String, Object> orderData) {
@@ -218,24 +249,18 @@ public class OrderBillingEngine {
         NotificationRecipientProvider recipientProvider =
                 recipientProviders.get(notifyChannel);
 
-        if (notificationService != null && recipientProvider != null) {
+        NotificationMessageProvider messageProvider =
+                messageProviders.get(notifyChannel);
+
+        if (notificationService != null
+                && recipientProvider != null
+                && messageProvider != null) {
 
             String recipient =
                     recipientProvider.getRecipient(orderData);
 
-            String notificationMessage;
-
-            if (notifyChannel.equals("EMAIL")) {
-
-                notificationMessage = "Your order of PKR "
-                        + String.format("%.2f", payableAmount)
-                        + " is confirmed!";
-
-            } else {
-
-                notificationMessage = "Order confirmed! Paid: PKR "
-                        + String.format("%.2f", payableAmount);
-            }
+            String notificationMessage =
+                    messageProvider.createMessage(payableAmount);
 
             notificationService.sendNotification(
                     recipient, notificationMessage);
