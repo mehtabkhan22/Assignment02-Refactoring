@@ -17,8 +17,9 @@ public class OrderBillingEngine {
 
     private final Map<String, PaymentStrategy> paymentStrategies
             = new java.util.HashMap<>();
+
     private final Map<String, NotificationService> notificationServices
-        = new java.util.HashMap<>();
+            = new java.util.HashMap<>();
 
     // Default constructor
     public OrderBillingEngine() {
@@ -28,25 +29,44 @@ public class OrderBillingEngine {
     // Constructor injection
     public OrderBillingEngine(OrderRepository orderRepository) {
 
-    this.orderRepository = orderRepository;
+        this.orderRepository = orderRepository;
 
-    // Register Payment Strategies
-    paymentStrategies.put(
-            "CREDIT_CARD", new CreditCardPayment());
+        // Register Payment Strategies
+        registerPaymentStrategy(
+                "CREDIT_CARD", new CreditCardPayment());
 
-    paymentStrategies.put(
-            "EASYPAISA", new EasyPaisaPayment());
+        registerPaymentStrategy(
+                "EASYPAISA", new EasyPaisaPayment());
 
-    paymentStrategies.put(
-            "CASH_ON_DELIVERY", new CashOnDeliveryPayment());
+        registerPaymentStrategy(
+                "CASH_ON_DELIVERY", new CashOnDeliveryPayment());
 
-    // Register Notification Services
-    notificationServices.put(
-            "EMAIL", new EmailNotificationService());
+        // Register Notification Services
+        notificationServices.put(
+                "EMAIL", new EmailNotificationService());
 
-    notificationServices.put(
-            "SMS", new SMSNotificationService());
-}
+        notificationServices.put(
+                "SMS", new SMSNotificationService());
+    }
+
+    // Register a new payment strategy
+    public void registerPaymentStrategy(
+            String paymentMethod,
+            PaymentStrategy strategy) {
+
+        if (paymentMethod == null || paymentMethod.isBlank()) {
+            throw new IllegalArgumentException(
+                    "Payment method cannot be empty!");
+        }
+
+        if (strategy == null) {
+            throw new IllegalArgumentException(
+                    "Payment strategy cannot be null!");
+        }
+
+        paymentStrategies.put(paymentMethod, strategy);
+    }
+
     public boolean processOrder(Map<String, Object> orderData) {
 
         // 1. Input Validation
@@ -136,42 +156,41 @@ public class OrderBillingEngine {
                 paymentStatus
         );
 
+        // 6. Notification Dispatch
+        String notifyChannel = (String)
+                orderData.getOrDefault("notifyChannel", "EMAIL");
 
-// 6. Notification Dispatch
-String notifyChannel = (String)
-        orderData.getOrDefault("notifyChannel", "EMAIL");
+        NotificationService notificationService =
+                notificationServices.get(notifyChannel);
 
-NotificationService notificationService =
-        notificationServices.get(notifyChannel);
+        if (notificationService != null) {
 
-if (notificationService != null) {
+            String recipient;
+            String notificationMessage;
 
-    String recipient;
-    String notificationMessage;
+            if (notifyChannel.equals("EMAIL")) {
 
-    if (notifyChannel.equals("EMAIL")) {
+                recipient = email;
 
-        recipient = email;
+                notificationMessage = "Your order of PKR "
+                        + String.format("%.2f", payableAmount)
+                        + " is confirmed!";
 
-        notificationMessage = "Your order of PKR "
-                + String.format("%.2f", payableAmount)
-                + " is confirmed!";
+            } else {
 
-    } else {
+                recipient = (String)
+                        orderData.getOrDefault(
+                                "phone", "0300-0000000");
 
-        recipient = (String)
-                orderData.getOrDefault("phone", "0300-0000000");
+                notificationMessage = "Order confirmed! Paid: PKR "
+                        + String.format("%.2f", payableAmount);
+            }
 
-        notificationMessage = "Order confirmed! Paid: PKR "
-                + String.format("%.2f", payableAmount);
-    }
+            notificationService.sendNotification(
+                    recipient, notificationMessage);
+        }
 
-    notificationService.sendNotification(
-            recipient, notificationMessage);
-}
-
-return true;
-
+        return true;
     }
 
     // Getter and Setter for testing file path redirection
