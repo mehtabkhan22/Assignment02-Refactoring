@@ -1,12 +1,8 @@
-
 package com.uet.legacy;
-
 import java.io.FileWriter;
 import java.io.IOException;
 import java.time.LocalDateTime;
-
 public class FileOrderRepository implements OrderRepository {
-
     private String logFilePath = "order_audit.log";
 
     @Override
@@ -29,12 +25,10 @@ public class FileOrderRepository implements OrderRepository {
                     "Failed to write order log: " + e.getMessage());
         }
     }
-
     @Override
     public void setLogFilePath(String logFilePath) {
         this.logFilePath = logFilePath;
     }
-
     @Override
     public String getLogFilePath() {
         return logFilePath;

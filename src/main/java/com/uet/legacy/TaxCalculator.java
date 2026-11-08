@@ -1,4 +1,3 @@
-
 package com.uet.legacy;
 
 public class TaxCalculator {
